@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+<div>
+    <label for="event-msg"></label>
+    <input id="event-msg" />
+</div>
+
+<div>
+    <label for="event-namespace"></label>
+    <select id="event-namespace">
+        <option value="namespace_1">post event under namespace_1</option>
+        <option value="namespace_2">post event under namespace_2</option>
+        <option value="multicast">post multicast event under namespace_2</option>
+        <option value="all">broadcast event</option>
+    </select>
+</div>
+
+<div>
+    <button id="event-post">send event</button>
+    <button id="deregister-test">deregister Zz handler</button>
+</div>
+
+<script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.slim.js"></script>
+<script src="../dist/beEventBus.min.js"></script>
+
+<script>
+
+    var namespace_1 = "namespace_1"
+    var namespace_2 = "namespace_2"
+
+    var eventName = "myEvent"
+
+    function registerHandler(handlerKey, namespace) {
+        return new function newHandler() {
+            this.key = handlerKey
+
+            //register event with scope
+            this.handler = beEventBus.bus.registerEventHandler(eventName, function (e) {
+                console.log(this.key + " under " + namespace + " received event : " + e)
+                console.log(e)
+            }, this, namespace)
+
+        }()
+    }
+
+    function sendEvent() {
+        var eventMsg = $("#event-msg").val()
+        var namespace = $("#event-namespace").val()
+        var e = {}
+
+        //event factory under namespace 1
+        var namespaceEventFactory = beEventBus.eventFactory(namespace_1)
+
+        //create an event
+        switch (namespace) {
+            case namespace_1:
+                //use factory
+                e = namespaceEventFactory.newEvent(eventName, eventMsg)
+                break
+
+            case namespace_2:
+                //use event object directly. must use new operator!
+                e = new beEventBus.event(namespace, eventName, eventMsg, beEventBus.eventType.UNICAST)
+                break
+
+            case "multicast":
+                //this event will send to all event name matched handler under namespace 2
+                e = new beEventBus.event(namespace_2, eventName, eventMsg, beEventBus.eventType.MULTICAST)
+                break
+
+            default:
+                //type BROADCAST will ignore namespace!
+                e = new beEventBus.event(namespace_1, eventName, eventMsg, beEventBus.eventType.BROADCAST)
+                break
+        }
+
+        //post the event
+        beEventBus.bus.post(e)
+    }
+
+    $(function () {
+        //Xx handler
+        registerHandler("Xx is under namespace 1", namespace_1)
+        //Yx handler
+        registerHandler("Yy is under namespace 2", namespace_2)
+
+        // Zz handler
+        // this handler will handle the matched unicast event under namespace 2.
+        // because it the last register for the event.
+        var ZzHandler = registerHandler("Zz is under namespace 2", namespace_2)
+
+
+        $("#event-post").on("click", sendEvent)
+
+        //deregister the Zz handler
+        $("#deregister-test").on("click", function () {
+            beEventBus.bus.deregisterEventHandler(ZzHandler.handler)
+        })
+    })
+</script>
+</body>
+</html>

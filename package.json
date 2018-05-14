@@ -1,0 +1,29 @@
+{
+  "name": "be-eventbus",
+  "version": "0.0.1",
+  "description": "a sample event bus",
+  "main": "./dist/beEventBus.min.js",
+  "scripts": {
+    "bable": "babel --plugins transform-es2015-modules-umd ./src/beEventBus.js -o ./dist/beEventBus.js",
+    "uglify": "uglifyjs ./dist/beEventBus.js -o ./dist/beEventBus.min.js",
+    "build": "npm run bable && npm run uglify"
+  },
+  "dependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-plugin-transform-es2015-modules-umd": "^6.24.1",
+    "uglify-js": "^3.3.24"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AKACoder/beEventBus.git"
+  },
+  "keywords": [
+    "event",
+    "bus",
+    "vue",
+    "vuejs"
+  ],
+  "author": "AKACoder",
+  "license": "MIT",
+  "homepage": "https://github.com/AKACoder/beEventBus"
+}
