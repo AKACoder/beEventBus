@@ -154,7 +154,6 @@ const bus = new function () {
          * @param e
          */
         post(e) {
-            console.log((e instanceof event))
             if(!(e instanceof event)) {
                 return
             }

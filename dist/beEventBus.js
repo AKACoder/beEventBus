@@ -181,7 +181,6 @@
                 }
             },
             post: function post(e) {
-                console.log(e instanceof event);
                 if (!(e instanceof event)) {
                     return;
                 }
