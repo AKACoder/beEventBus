@@ -48,6 +48,23 @@ const bus = new function () {
 
     let eventHandlerMap = {}
 
+    function getHandlers(namespace, eventName) {
+        if(!eventHandlerMap[namespace]) {
+            return null
+        }
+
+        let handlers = eventHandlerMap[namespace][eventName]
+        if(!(handlers instanceof Array)) {
+            return null
+        }
+
+        if(0 === handlers.length) {
+            return null
+        }
+
+        return handlers
+    }
+
     function sendEvent(handler, data) {
         if(handler.scope instanceof Object) {
             handler.action.call(handler.scope, data)
@@ -58,40 +75,32 @@ const bus = new function () {
 
     function sendMultipleEvent(name, handlers, data) {
         for(let i = 0; i < handlers.length; i++) {
-            if(name !== handlers[i].eventName) {
-                continue
-            }
             sendEvent(handlers[i], data)
         }
     }
 
-    function broadcastEvent(name, data) {
-        for(let handlers of Object.values(eventHandlerMap)) {
-            sendMultipleEvent(name, handlers, data)
+    function broadcastEvent(eventName, data) {
+        for(let namespace of Object.keys(eventHandlerMap)) {
+            let handlers = getHandlers(namespace, eventName)
+            sendMultipleEvent(eventName, handlers, data)
         }
     }
 
-    function unicastEvent(namespace, name, data) {
-        if(!eventHandlerMap[namespace]) {
-            return
-        }
-
-        const handlers = eventHandlerMap[namespace]
-        if(1 > handlers.length) {
+    function unicastEvent(namespace, eventName, data) {
+        const handlers = getHandlers(namespace, eventName)
+        if(!handlers) {
             return
         }
 
         sendEvent(handlers[0], data)
-
     }
 
-    function multicastEvent(namespace, name, data) {
-        if(!eventHandlerMap[namespace]) {
+    function multicastEvent(namespace, eventName, data) {
+        const handlers = getHandlers(namespace, eventName)
+        if(!handlers) {
             return
         }
-
-        const handlers = eventHandlerMap[namespace]
-        sendMultipleEvent(name, handlers, data)
+        sendMultipleEvent(eventName, handlers, data)
     }
 
     return {
@@ -104,12 +113,17 @@ const bus = new function () {
          * @returns {eventHandler}
          */
         registerEventHandler(eventName, action, scope = null, namespace = BE_EVENT_BUS_DEFAULT_NAMESPACE) {
-            if(!(eventHandlerMap[namespace] instanceof Array)) {
-                eventHandlerMap[namespace] = []
+            if(!(eventHandlerMap[namespace] instanceof Object)) {
+                eventHandlerMap[namespace] = {}
+                eventHandlerMap[namespace][eventName] = []
+            } else {
+                if(!(eventHandlerMap[namespace][eventName] instanceof Array)) {
+                    eventHandlerMap[namespace][eventName] = []
+                }
             }
 
             let handler = new eventHandler(namespace, eventName, action, scope)
-            eventHandlerMap[namespace].unshift(handler)
+            eventHandlerMap[namespace][eventName].unshift(handler)
             return handler
         },
 
@@ -122,11 +136,10 @@ const bus = new function () {
                 return
             }
 
-            if(!eventHandlerMap[handler.namespace]) {
+            let handlers = getHandlers(handler.namespace, handler.eventName)
+            if (!handlers) {
                 return
             }
-
-            let handlers = eventHandlerMap[handler.namespace]
 
             for (let i = 0; i < handlers.length; i++) {
                 if(handler === handlers[i]) {
@@ -141,6 +154,7 @@ const bus = new function () {
          * @param e
          */
         post(e) {
+            console.log((e instanceof event))
             if(!(e instanceof event)) {
                 return
             }

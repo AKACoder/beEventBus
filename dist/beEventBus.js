@@ -69,6 +69,23 @@
 
         var eventHandlerMap = {};
 
+        function getHandlers(namespace, eventName) {
+            if (!eventHandlerMap[namespace]) {
+                return null;
+            }
+
+            var handlers = eventHandlerMap[namespace][eventName];
+            if (!(handlers instanceof Array)) {
+                return null;
+            }
+
+            if (0 === handlers.length) {
+                return null;
+            }
+
+            return handlers;
+        }
+
         function sendEvent(handler, data) {
             if (handler.scope instanceof Object) {
                 handler.action.call(handler.scope, data);
@@ -79,23 +96,21 @@
 
         function sendMultipleEvent(name, handlers, data) {
             for (var i = 0; i < handlers.length; i++) {
-                if (name !== handlers[i].eventName) {
-                    continue;
-                }
                 sendEvent(handlers[i], data);
             }
         }
 
-        function broadcastEvent(name, data) {
+        function broadcastEvent(eventName, data) {
             var _iteratorNormalCompletion = true;
             var _didIteratorError = false;
             var _iteratorError = undefined;
 
             try {
-                for (var _iterator = Object.values(eventHandlerMap)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-                    var handlers = _step.value;
+                for (var _iterator = Object.keys(eventHandlerMap)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                    var namespace = _step.value;
 
-                    sendMultipleEvent(name, handlers, data);
+                    var handlers = getHandlers(namespace, eventName);
+                    sendMultipleEvent(eventName, handlers, data);
                 }
             } catch (err) {
                 _didIteratorError = true;
@@ -113,26 +128,21 @@
             }
         }
 
-        function unicastEvent(namespace, name, data) {
-            if (!eventHandlerMap[namespace]) {
-                return;
-            }
-
-            var handlers = eventHandlerMap[namespace];
-            if (1 > handlers.length) {
+        function unicastEvent(namespace, eventName, data) {
+            var handlers = getHandlers(namespace, eventName);
+            if (!handlers) {
                 return;
             }
 
             sendEvent(handlers[0], data);
         }
 
-        function multicastEvent(namespace, name, data) {
-            if (!eventHandlerMap[namespace]) {
+        function multicastEvent(namespace, eventName, data) {
+            var handlers = getHandlers(namespace, eventName);
+            if (!handlers) {
                 return;
             }
-
-            var handlers = eventHandlerMap[namespace];
-            sendMultipleEvent(name, handlers, data);
+            sendMultipleEvent(eventName, handlers, data);
         }
 
         return {
@@ -140,12 +150,17 @@
                 var scope = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
                 var namespace = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : BE_EVENT_BUS_DEFAULT_NAMESPACE;
 
-                if (!(eventHandlerMap[namespace] instanceof Array)) {
-                    eventHandlerMap[namespace] = [];
+                if (!(eventHandlerMap[namespace] instanceof Object)) {
+                    eventHandlerMap[namespace] = {};
+                    eventHandlerMap[namespace][eventName] = [];
+                } else {
+                    if (!(eventHandlerMap[namespace][eventName] instanceof Array)) {
+                        eventHandlerMap[namespace][eventName] = [];
+                    }
                 }
 
                 var handler = new eventHandler(namespace, eventName, action, scope);
-                eventHandlerMap[namespace].unshift(handler);
+                eventHandlerMap[namespace][eventName].unshift(handler);
                 return handler;
             },
             deregisterEventHandler: function deregisterEventHandler(handler) {
@@ -153,11 +168,10 @@
                     return;
                 }
 
-                if (!eventHandlerMap[handler.namespace]) {
+                var handlers = getHandlers(handler.namespace, handler.eventName);
+                if (!handlers) {
                     return;
                 }
-
-                var handlers = eventHandlerMap[handler.namespace];
 
                 for (var i = 0; i < handlers.length; i++) {
                     if (handler === handlers[i]) {
@@ -167,6 +181,7 @@
                 }
             },
             post: function post(e) {
+                console.log(e instanceof event);
                 if (!(e instanceof event)) {
                     return;
                 }
