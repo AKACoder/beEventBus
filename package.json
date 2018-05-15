@@ -1,6 +1,6 @@
 {
   "name": "be-eventbus",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "a sample event bus",
   "main": "./dist/beEventBus.min.js",
   "scripts": {
