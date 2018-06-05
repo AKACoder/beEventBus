@@ -1,5 +1,5 @@
 # beEventBus
-javascript版本的时间总线。  
+javascript版本的事件总线。  
 
 
 ### 关于'be'
