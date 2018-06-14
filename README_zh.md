@@ -1,5 +1,5 @@
 # beEventBus
-javascript版本的时间总线。  
+javascript版本的事件总线。  
 
 ### 关键属性  
 - 命名空间+消息名称的驱动方式  
